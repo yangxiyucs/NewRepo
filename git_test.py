@@ -3,7 +3,6 @@
 """
 Created on Mon Jul 23 14:17:14 2018
 
-@author: vimanyu
 """
 
 from flask import Flask
@@ -32,7 +31,7 @@ class main():
         for n in range(0, len(self.user_names)):
             user = requests.get('https://api.github.com/repos/' + self.user_names[n] + '/' + self.repos[n] + '/commits')
             self.git_data['{0}'.format(self.user_names[n])] = json.loads(user.text)
-        #            print(self.git_data)
+            print(self.git_data)
 
         self.git_commit_count = {}
         for i in range(0, len(self.user_names)):
@@ -45,41 +44,61 @@ class main():
             results = list(set(results))
             results = [x for x in results if ("2018" in x)]
             self.git_commit_count['{0}'.format(self.user_names[i])] = len(results)
+            #
+            repos = requests.get('https://api.github.com/users/' + self.user_names[i] + '/repos?per_page=100',
+                                 auth=('yangxiyucs', '<token>'))
+            for repo in repos.json():
+                if not (repo['name'].startswith('docker')):
+                    print('---------------')
+                    print(repo['name'])
+                    commits = requests.get('https://api.github.com/repos/' + self.user_names[i] + + str(
+                        repo['name']) + '/stats/participation?per_page=1000', auth=('jpwhitemn', '<token>'))
+                    weeks = commits.json()['all']
+                    for i in weeks:
+                        print(i)
+
         print(self.git_commit_count)
+
+
+############################################################################################
+"""Total number of commit contributions as above, but restricted to projects that are members of the original submitted set."""
+
+
+############################################################################################
+
+
+def calculate():
+    commit_list = []
+    commit_count = 0
+    page_number = 1
+    pages = True
+    while (pages):
+        link = requests.get(
+            "https://api.github.com/repos/yangxiyucs/NewRepo/commits?page={}&per_page=100".format(page_number),
+            auth=('yangxiyucs', 'ab112113'))
+        json_data = json.loads(link.text)
+        print(pages)
+
+        if (len(json_data) == 0):
+            break
+        for i in json_data:
+            commit_list.append(i['sha'])
+            print("Commit Sha: {}".format(i['sha']))
+
+        if (len(json_data) == 0):
+            print("End")
+            pages = False
+            break
+        else:
+        # print(link.headers.get('link'))
+        # print("new")
+        page_number = page_number + 1
+
+    # json_data[0]['committer']['login'] == self.user_names[0]
 
 
 if __name__ == "__main__":
     # Git = main()
     main()
+
     app.run(host='127.0.0.1', debug=True)
-
-############################################################################################
-"""Total number of commit contributions as above, but restricted to projects that are members of the original submitted set."""
-############################################################################################
-commit_list = []
-commit_count = 0
-page_number = 1
-pages = True
-while (pages):
-    link = requests.get(
-        "https://api.github.com/repos/yangxiyucs/NewRepo/commits?page={}&per_page=100".format(page_number),
-        auth=('yangxiyucs', 'ab112113'))
-    json_data = json.loads(link.text)
-    print(pages)
-
-    if (len(json_data) == 0):
-        break
-    for i in json_data:
-        commit_list.append(i['sha'])
-        print("Commit Sha: {}".format(i['sha']))
-
-    if (len(json_data) == 0):
-        print("End")
-        pages = False
-        break
-    else:
-        #       print(link.headers.get('link'))
-        print("new")-
-        page_number = page_number + 1
-
-    # json_data[0]['committer']['login'] == self.user_names[0]
