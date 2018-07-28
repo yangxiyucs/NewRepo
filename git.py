@@ -28,8 +28,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # GitHub-Flask
 # Register your OAuth application on https://github.com/settings/applications/new
 # You normally need to save this values as enviroment variable
+
 app.config['GITHUB_CLIENT_ID'] = 'your_client_id'
 app.config['GITHUB_CLIENT_SECRET'] = 'your_clent_secret'
+# For GitHub Enterprise
+# app.config['GITHUB_BASE_URL'] = 'https://HOSTNAME/api/v3/'
+# app.config['GITHUB_AUTH_URL'] = 'https://HOSTNAME/login/oauth/'
 
 db = SQLAlchemy(app)
 github = GitHub(app)
