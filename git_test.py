@@ -46,16 +46,17 @@ class main():
             self.git_commit_count['{0}'.format(self.user_names[i])] = len(results)
             #
             repos = requests.get('https://api.github.com/users/' + self.user_names[i] + '/repos?per_page=100',
-                                 auth=('yangxiyucs', '<token>'))
+                                 auth=('yangxiyucs', 'ab112113'))
+            #weekly commits
             for repo in repos.json():
-                if not (repo['name'].startswith('docker')):
-                    print('---------------')
-                    print(repo['name'])
-                    commits = requests.get('https://api.github.com/repos/' + self.user_names[i] + + str(
-                        repo['name']) + '/stats/participation?per_page=1000', auth=('jpwhitemn', '<token>'))
-                    weeks = commits.json()['all']
-                    for i in weeks:
-                        print(i)
+                # if not (repo['name'].startswith('docker')):
+                print('---------------')
+                print(repo['name'])
+                commits = requests.get('https://api.github.com/repos/' + self.user_names[i] + + str(
+                    repo['name']) + '/stats/participation?per_page=1000', auth=('yangxiyucs', 'ab112113'))
+                weeks = commits.json()['all']
+                for i in weeks:
+                    print(i)
 
         print(self.git_commit_count)
 
@@ -96,23 +97,25 @@ def calculate():
 
     # json_data[0]['committer']['login'] == self.user_names[0]
 
-    def Language(self):
-        for j in range(0, len(self.git_username)):
-            link = requests.get("https://api.github.com/users/" + self.git_username[j] + "/repos",
-                                auth=('yangxiyucs', 'ab112113'))
-            json_data = json.loads(link.text)
-            results = nested_lookup(key='full_name', document=json_data, wild=True, with_keys=False)
 
-            self.git_language = {}
-            new = []
-            for l in range(0, len(results)):
-                link = requests.get("https://api.github.com/repos/" + results[l] + "/languages",
-                                    auth=('yangxiyucs', 'ab112113'))
-                language_data = json.loads(link.text)
-                for x in range(0, len(language_data)):
-                    new.append(list(language_data)[x])
-                self.git_language['{0}'.format(self.git_username[j])] = list(set(new))
-            print(self.git_language)
+def Language(self):
+    for j in range(0, len(self.git_username)):
+        link = requests.get("https://api.github.com/users/" + self.git_username[j] + "/repos",
+                            auth=('yangxiyucs', 'ab112113'))
+        json_data = json.loads(link.text)
+        results = nested_lookup(key='full_name', document=json_data, wild=True, with_keys=False)
+
+        self.git_language = {}
+        new = []
+        for l in range(0, len(results)):
+            link = requests.get("https://api.github.com/repos/" + results[l] + "/languages",
+                                auth=('yangxiyucs', 'ab112113'))
+            language_data = json.loads(link.text)
+            for x in range(0, len(language_data)):
+                new.append(list(language_data)[x])
+            self.git_language['{0}'.format(self.git_username[j])] = list(set(new))
+        print(self.git_language)
+
 
 if __name__ == "__main__":
     main()
