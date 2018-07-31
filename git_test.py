@@ -96,9 +96,25 @@ def calculate():
 
     # json_data[0]['committer']['login'] == self.user_names[0]
 
+    def Language(self):
+        for j in range(0, len(self.git_username)):
+            link = requests.get("https://api.github.com/users/" + self.git_username[j] + "/repos",
+                                auth=('yangxiyucs', 'ab112113'))
+            json_data = json.loads(link.text)
+            results = nested_lookup(key='full_name', document=json_data, wild=True, with_keys=False)
+
+            self.git_language = {}
+            new = []
+            for l in range(0, len(results)):
+                link = requests.get("https://api.github.com/repos/" + results[l] + "/languages",
+                                    auth=('yangxiyucs', 'ab112113'))
+                language_data = json.loads(link.text)
+                for x in range(0, len(language_data)):
+                    new.append(list(language_data)[x])
+                self.git_language['{0}'.format(self.git_username[j])] = list(set(new))
+            print(self.git_language)
 
 if __name__ == "__main__":
-    # Git = main()
     main()
 
     app.run(host='127.0.0.1', debug=True)
