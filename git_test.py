@@ -45,35 +45,19 @@ class main():
             results = [x for x in results if ("2018" in x)]
             self.git_commit_count['{0}'.format(self.user_names[i])] = len(results)
             #
-            repos = requests.get('https://api.github.com/users/' + self.user_names[i] + '/repos?per_page=100',
-                                 auth=('yangxiyucs', 'ab112113'))
-            #weekly commits
-            for repo in repos.json():
-                # if not (repo['name'].startswith('docker')):
-                print('---------------')
-                print(repo['name'])
-                commits = requests.get('https://api.github.com/repos/' + self.user_names[i] + + str(
-                    repo['name']) + '/stats/participation?per_page=1000', auth=('yangxiyucs', 'ab112113'))
-                weeks = commits.json()['all']
-                for i in weeks:
-                    print(i)
 
         print(self.git_commit_count)
 
 
-############################################################################################
 """Total number of commit contributions as above, but restricted to projects that are members of the original submitted set."""
 
 
-############################################################################################
-
-
-def calculate():
-    commit_list = []
-    commit_count = 0
-    page_number = 1
-    pages = True
-    while (pages):
+    def originset(self):
+      self.commit_list = []
+      # commit_count = 0
+      page_number = 1
+      pages = True
+      while (pages):
         link = requests.get(
             "https://api.github.com/repos/yangxiyucs/NewRepo/commits?page={}&per_page=100".format(page_number),
             auth=('yangxiyucs', 'ab112113'))
@@ -83,7 +67,7 @@ def calculate():
         if (len(json_data) == 0):
             break
         for i in json_data:
-            commit_list.append(i['sha'])
+            self.commit_list.append(i['sha'])
             print("Commit Sha: {}".format(i['sha']))
 
         if (len(json_data) == 0):
@@ -91,33 +75,86 @@ def calculate():
             pages = False
             break
         else:
-        # print(link.headers.get('link'))
-        # print("new")
-        page_number = page_number + 1
-
+            pass
     # json_data[0]['committer']['login'] == self.user_names[0]
 
 
-def Language(self):
-    for j in range(0, len(self.git_username)):
-        link = requests.get("https://api.github.com/users/" + self.git_username[j] + "/repos",
-                            auth=('yangxiyucs', 'ab112113'))
-        json_data = json.loads(link.text)
-        results = nested_lookup(key='full_name', document=json_data, wild=True, with_keys=False)
+""" The number of known programming languages for each user (presuming that the languages of
+        any repository committed to are known to the user) """
 
-        self.git_language = {}
-        new = []
-        for l in range(0, len(results)):
-            link = requests.get("https://api.github.com/repos/" + results[l] + "/languages",
-                                auth=('yangxiyucs', 'ab112113'))
-            language_data = json.loads(link.text)
-            for x in range(0, len(language_data)):
-                new.append(list(language_data)[x])
-            self.git_language['{0}'.format(self.git_username[j])] = list(set(new))
-        print(self.git_language)
+
+    def Language(self):
+            for j in range(0, len(self.git_username)):
+                link = requests.get("https://api.github.com/users/" + self.git_username[j] + "/repos",
+                                    auth=('yangxiyucs', 'ab112113'))
+                json_data = json.loads(link.text)
+                results = nested_lookup(key='full_name', document=json_data, wild=True, with_keys=False)
+
+                self.git_language = {}
+                self.new_language = []
+                for i in range(0, len(results)):
+                    link = requests.get("https://api.github.com/repos/" + results[i] + "/languages",
+                                        auth=('yangxiyucs', 'ab112113'))
+                    language_data = json.loads(link.text)
+                    for l in range(0, len(language_data)):
+                        self.new_language.append(list(language_data)[l])
+                    self.git_language[self.git_username[j]] = list(set(self.new_language))
+                print(self.git_language)
+
+
+""" The number of known programming languages for each user (presuming that the languages of
+        any repository committed to are known to the user) """
+
+
+# weekly commits
+
+    def Repo(self):
+
+
+        repos = requests.get('https://api.github.com/users/' + self.user_names[i] + '/repos?per_page=100',
+                         auth=('yangxiyucs', 'ab112113'))
+
+        for repo in repos.json():
+            # if not (repo['name'].startswith('docker')):
+            #print('---------------')
+            print(repo['name'])
+            commits = requests.get('https://api.github.com/repos/' + self.user_names[i] + + str(
+                repo['name']) + '/stats/participation?per_page=1000', auth=('yangxiyucs', 'ab112113'))
+            weeks = commits.json()['all']
+            for i in weeks:
+                print(i)
+
+
+############################################################################################
+"""  5. The average commit rate of each user to any project, for 2018."""
+############################################################################################
+
+avg_cmt = {}
+username = ['vimanyuk', 'hanutm']
+for k in username:
+
+    link = requests.get("https://api.github.com/users/" + k + "/repos?per_page=100", auth=('yangxiyucs', 'ab112113'))
+    json_data = json.loads(link.text)
+    results = nested_lookup(key='name', document=json_data, wild=False, with_keys=False)
+    count = 0.0
+    counter = 0
+
+    for i in results:
+        link = requests.get("https://api.github.com/repos/" + k + "/" + i + "/" + "stats/commit_activity",
+                            auth=('yangxiyucs', 'ab112113'))
+        data = json.loads(link.text)
+
+        for j in data:
+            if (j['total'] != 0 and (
+                    '2018' in (datetime.datetime.fromtimestamp(int(j['week'])).strftime('%Y-%m-%d %H:%M:%S')))):
+                count = j['total'] + count
+                print(k, i, datetime.datetime.fromtimestamp(int(j['week'])).strftime('%Y-%m-%d %H:%M:%S'), " = ",
+                      j['total'])
+            else:
+                continue
+        avg_cmt['{0}'.format(k)] = (count / (len(results)))
 
 
 if __name__ == "__main__":
     main()
-
-    app.run(host='127.0.0.1', debug=True)
+    app.run(host='0.0.0.0', debug=True, port=8080)
