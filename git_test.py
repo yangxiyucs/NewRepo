@@ -15,7 +15,7 @@ api = Api(app)
 
 
 class main():
-    def __init__(self):
+     def __init__(self):
         self.number_of_users = int(input('username/repos add : '))
         self.user_names = []
         self.repos = []
@@ -48,42 +48,37 @@ class main():
 
         print(self.git_commit_count)
 
+     """Total number of commit contributions as above, but restricted to projects that are members of the original submitted set."""
 
-"""Total number of commit contributions as above, but restricted to projects that are members of the original submitted set."""
+     def originset(self):
+                self.commit_list = []
+                # commit_count = 0
+                page_number = 1
+                pages = True
+                while (pages):
+                    link = requests.get(
+                        "https://api.github.com/repos/yangxiyucs/NewRepo/commits?page={}&per_page=100".format(page_number),
+                        auth=('yangxiyucs', 'ab112113'))
+                    json_data = json.loads(link.text)
+                    print(pages)
 
+                    if (len(json_data) == 0):
+                        break
+                    for i in json_data:
+                        self.commit_list.append(i['sha'])
+                        print("Commit Sha: {}".format(i['sha']))
 
-    def originset(self):
-      self.commit_list = []
-      # commit_count = 0
-      page_number = 1
-      pages = True
-      while (pages):
-        link = requests.get(
-            "https://api.github.com/repos/yangxiyucs/NewRepo/commits?page={}&per_page=100".format(page_number),
-            auth=('yangxiyucs', 'ab112113'))
-        json_data = json.loads(link.text)
-        print(pages)
+                    if (len(json_data) == 0):
+                        print("End")
+                        pages = False
+                        break
+                    else:
+                        pass
+# json_data[0]['committer']['login'] == self.user_names[0]
 
-        if (len(json_data) == 0):
-            break
-        for i in json_data:
-            self.commit_list.append(i['sha'])
-            print("Commit Sha: {}".format(i['sha']))
-
-        if (len(json_data) == 0):
-            print("End")
-            pages = False
-            break
-        else:
-            pass
-    # json_data[0]['committer']['login'] == self.user_names[0]
-
-
-""" The number of known programming languages for each user (presuming that the languages of
-        any repository committed to are known to the user) """
-
-
-    def Language(self):
+     """ The number of known programming languages for each user (presuming that the languages of
+             any repository committed to are known to the user) """
+     def language(self):
             for j in range(0, len(self.git_username)):
                 link = requests.get("https://api.github.com/users/" + self.git_username[j] + "/repos",
                                     auth=('yangxiyucs', 'ab112113'))
@@ -102,21 +97,19 @@ class main():
                 print(self.git_language)
 
 
-""" The number of known programming languages for each user (presuming that the languages of
-        any repository committed to are known to the user) """
 
 
-# weekly commits
 
-    def Repo(self):
+# weekly commits in 2018
 
-
-        repos = requests.get('https://api.github.com/users/' + self.user_names[i] + '/repos?per_page=100',
-                         auth=('yangxiyucs', 'ab112113'))
+    def repo(self):
+        for i in range(0, len(self.git_username)):
+            repos = requests.get('https://api.github.com/users/' + self.user_names[i] + '/repos?per_page=100',
+                                 auth=('yangxiyucs', 'ab112113'))
 
         for repo in repos.json():
             # if not (repo['name'].startswith('docker')):
-            #print('---------------')
+            # print('---------------')
             print(repo['name'])
             commits = requests.get('https://api.github.com/repos/' + self.user_names[i] + + str(
                 repo['name']) + '/stats/participation?per_page=1000', auth=('yangxiyucs', 'ab112113'))
@@ -130,30 +123,29 @@ class main():
 ############################################################################################
 
 avg_cmt = {}
-username = ['vimanyuk', 'hanutm']
-for k in username:
+username = ['yangxiyucs', 'hanutm']
+for name in username:
 
-    link = requests.get("https://api.github.com/users/" + k + "/repos?per_page=100", auth=('yangxiyucs', 'ab112113'))
+    link = requests.get("https://api.github.com/users/" + name + "/repos?per_page=100", auth=('yangxiyucs', 'ab112113'))
     json_data = json.loads(link.text)
     results = nested_lookup(key='name', document=json_data, wild=False, with_keys=False)
-    count = 0.0
+    count = 0
     counter = 0
 
     for i in results:
-        link = requests.get("https://api.github.com/repos/" + k + "/" + i + "/" + "stats/commit_activity",
+        link = requests.get("https://api.github.com/repos/" + name + "/" + i + "/" + "stats/commit_activity",
                             auth=('yangxiyucs', 'ab112113'))
         data = json.loads(link.text)
 
-        for j in data:
-            if (j['total'] != 0 and (
-                    '2018' in (datetime.datetime.fromtimestamp(int(j['week'])).strftime('%Y-%m-%d %H:%M:%S')))):
-                count = j['total'] + count
-                print(k, i, datetime.datetime.fromtimestamp(int(j['week'])).strftime('%Y-%m-%d %H:%M:%S'), " = ",
-                      j['total'])
+        for d in data:
+            if (d['total'] != 0 and (
+                    '2018' in (datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S')))):
+                count = d['total'] + count
+                print(name, i, datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S'), " = ",
+                      d['total'])
             else:
                 continue
-        avg_cmt['{0}'.format(k)] = (count / (len(results)))
-
+        avg_cmt[name] = (count / (len(results)))
 
 if __name__ == "__main__":
     main()
