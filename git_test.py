@@ -42,13 +42,13 @@ def total():
 
         for i in range(0, len(git.user_names)):
             git_user_data = {}
-            temp = subprocess.check_output(["curl", "-H", "Accept: application/vnd.github.cloak-preview",
-                                            "https://api.github.com/search/commits?q=author:" + git.user_names[
-                                                i] + "&per_page=100"], shell=False).decode('utf-8')
-            git_user_data['{0}'.format(git.user_names[i])] = json.loads(temp)
-            results = nested_lookup(key='date', document=git_user_data, wild=True, with_keys=False)
+            result = result.get(["curl", "-H", "Accept: application/vnd.github.cloak-preview",
+                                 "https://api.github.com/search/commits?q=author:" + git.user_names[
+                                     i] + "&per_page=100"], shell=False).decode('utf-8')
+            git_user_data['{0}'.format(git.user_names[i])] = json.loads(result)
+            results = nested_lookup(key='date', document=git_user_data, wild=True)
             results = list(set(results))
-            results = [x for x in results if ("2018" in x)]
+            results = [date for date in results if ("2018" in date)]
             git_commit_count['{0}'.format(git.user_names[i])] = len(results)
             #
 
@@ -111,9 +111,9 @@ def weekly():
         # if not (repo['name'].startswith('docker')):
         # print('---------------')
         print(repo['name'])
-        commits = requests.get('https://api.github.com/repos/' + git.user_names[i] + + str(
+        results = requests.get('https://api.github.com/repos/' + git.user_names[i] + + str(
             repo['name']) + '/stats/participation?per_page=100', auth=('yangxiyucs', 'ab112113'))
-        weeks = commits.json()['all']
+        weeks = results.json()['all']
         for i in weeks:
             return (i)
 
@@ -129,7 +129,7 @@ def average():
         link = requests.get("https://api.github.com/users/" + name + "/repos?per_page=100",
                             auth=('yangxiyucs', 'ab112113'))
         json_data = json.loads(link.text)
-        results = nested_lookup(key='name', document=json_data, wild=False, with_keys=False)
+        results = nested_lookup(key='name', document=json_data)
         count = 0
         counter = 0
 
@@ -142,12 +142,13 @@ def average():
                 if (d['total'] != 0 and (
                         '2018' in (datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S')))):
                     count = d['total'] + count
-                    print(name, i, datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S'),
-                          " = ",
-                          d['total'])
+                    # print(name, i, datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S'),
+                    #       " = ",
+                    #       d['total'])
                 else:
-                    continue
+                    pass
             avg_cmt[name] = (count / (len(results)))
+    return jsonify(avg_cmt)
 
 
 """ 6. The total number of collaborators in 2018 (ie. a count of other users who have 
