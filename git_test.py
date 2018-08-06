@@ -44,7 +44,7 @@ def total():
             git_user_data = {}
             result = result.get(["curl", "-H", "Accept: application/vnd.github.cloak-preview",
                                  "https://api.github.com/search/commits?q=author:" + git.user_names[
-                                     i] + "&per_page=100"], shell=False).decode('utf-8')
+                                     i] + "&per_page=1000"], shell=False).decode('utf-8')
             git_user_data['{0}'.format(git.user_names[i])] = json.loads(result)
             results = nested_lookup(key='date', document=git_user_data, wild=True)
             results = list(set(results))
@@ -86,7 +86,7 @@ def language():
         link = requests.get("https://api.github.com/users/" + git.user_names[j] + "/repos",
                             auth=('yangxiyucs', 'ab112113'))
         json_data = json.loads(link.text)
-        results = nested_lookup(key='full_name', document=json_data, wild=True, with_keys=False)
+        results = nested_lookup(key='full_name', document=json_data, wild=True)
 
         git_language = {}
         add_language = []
@@ -97,25 +97,39 @@ def language():
             for l in range(0, len(language_data)):
                 add_language.append(list(language_data)[l])
             git_language[git.user_names[i]] = list(set(add_language))
-        return (git_language)
+    return (jsonify(git_language))
 
 
 # 4.weekly commits in 2018
 @app.route('/repo', method=['GET'])
 def weekly():
-    for i in range(0, len(git.git_username)):
-        repos = requests.get('https://api.github.com/users/' + git.user_names[i] + '/repos?per_page=100',
+    for i in range(0, len(git.user_names)):
+        repos = requests.get('https://api.github.com/users/' + git.user_names[i] + '/repos?per_page=1000',
                              auth=('yangxiyucs', 'ab112113'))
+    cmt_rate = {}
+    # for repo in repos.json():
+    #     print(repo)
+    #     results = requests.get('https://api.github.com/repos/' + git.user_names[i] + '/' + str(
+    #         repo['name']) + '/stats/participation?per_page=1000', auth=('yangxiyucs', 'ab112113'))
+    #     weeks = results.json()['all']
+    #     for i in weeks:
+    #         pass
+    for r in range(0, len(git.user_names)):
+        link = requests.get(
+            "https://api.github.com/repos/" + git.user_names[r] + "/" + git.repos[r] + "/stats/commit_activity",
+            auth=('yangxiyucs', 'ab112113'))
+        json_data = json.loads(link.text)
+        count = []
+        for d in json_data:
+            if (d['total'] != 0 and (
+                    '2018' in (datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S')))):
 
-    for repo in repos.json():
-        # if not (repo['name'].startswith('docker')):
-        # print('---------------')
-        print(repo['name'])
-        results = requests.get('https://api.github.com/repos/' + git.user_names[i] + + str(
-            repo['name']) + '/stats/participation?per_page=100', auth=('yangxiyucs', 'ab112113'))
-        weeks = results.json()['all']
-        for i in weeks:
-            return (i)
+                count.extend(
+                    [datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S'), d['total']])
+            else:
+                continue
+        cmt_rate[git.user_name[r]] = count
+    return (cmt_rate)
 
 
 """  5. The average commit rate of each user to any project, for 2018."""
@@ -126,7 +140,7 @@ def average():
     avg_cmt = {}
     for name in git.user_names:
 
-        link = requests.get("https://api.github.com/users/" + name + "/repos?per_page=100",
+        link = requests.get("https://api.github.com/users/" + name + "/repos?per_page=1000",
                             auth=('yangxiyucs', 'ab112113'))
         json_data = json.loads(link.text)
         results = nested_lookup(key='name', document=json_data)
@@ -142,12 +156,10 @@ def average():
                 if (d['total'] != 0 and (
                         '2018' in (datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S')))):
                     count = d['total'] + count
-                    # print(name, i, datetime.datetime.fromtimestamp(int(d['week'])).strftime('%Y-%m-%d %H:%M:%S'),
-                    #       " = ",
-                    #       d['total'])
+
                 else:
                     pass
-            avg_cmt[name] = (count / (len(results)))
+        avg_cmt[name] = (count / (len(results)))
     return jsonify(avg_cmt)
 
 
