@@ -17,22 +17,27 @@
         </ul>
     </nav>
 
+
     <main>
         {% for message in get_flashed_messages() %}
+
         <div class="alert">
             {{ message }}
         </div>
+
         {% endfor %}
-        {% block content %}{% endblock %}
+
+        {% block content %}
+
+        {% endblock %}
     </main>
+
 <footer>
     {% block footer %}
-    <small> &copy; 2018 <a href="http://.com" title="">young</a> /
-                <a href="https://github.com/greyli/helloflask" title="Fork me on GitHub">GitHub</a> /
-                <a href="http://helloflask.com" title="Flask and git project">HelloFlask</a>
-            </small>
+
     {% endblock %}
 </footer>
-{% block scripts %}{% endblock %}
+{% block scripts %}
+    {% endblock %}
 </body>
 </html>

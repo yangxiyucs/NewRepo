@@ -9,17 +9,20 @@ from flask import Flask, jsonify
 from flask_restful import Resource, Api, reqparse
 import requests, json, subprocess, datetime
 from nested_lookup import nested_lookup
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 api = Api(app)
-
+mail = Mail()
 ''''main'''
+mail.init_app(app)
 
 
 class main():
     def __init__(self):
         self.number_of_users = int(input('number of username/repos add : '))
         self.repos = []
+        self.add = []
         while (self.number_of_users != 0):
             self.user_name = input('user name: ')
             self.user_names.append(self.user_name)
@@ -31,7 +34,7 @@ class main():
 """1.Total number of commit contributions to any project to which a user has a contributed."""
 
 
-@app.route('', method=['GET'])
+@app.route('/t1', method=['GET'])
 def total():
     git_commit_count = {}
     git_data = {}
@@ -50,15 +53,15 @@ def total():
             results = list(set(results))
             results = [date for date in results if ("2018" in date)]
             git_commit_count['{0}'.format(git.user_names[i])] = len(results)
-            #
 
-        return (git_commit_count)
+        git.add.append(jsonify(git_commit_count))
+        return jsonify(git_commit_count)
 
 
 """2.Total number of commit contributions as above, but restricted to projects that are members of the original submitted set."""
 
 
-@app.route('/rate', method=['GET'])
+@app.route('/t2', method=['GET'])
 def origin():
     commit_list = []
     # commit_count = 0
@@ -71,7 +74,8 @@ def origin():
             auth=('yangxiyucs', 'ab112113'))
         json_data = json.loads(result.text)
         commit_list[user] = len(json_data)
-    return commit_list
+    git.add.append(jsonify(commit_list))
+    return jsonify(commit_list)
 
 
 ''' 
@@ -80,7 +84,7 @@ def origin():
 '''
 
 
-@app.route('/language', method=['GET'])
+@app.route('/t3', method=['GET'])
 def language():
     for j in range(0, len(git.user_names)):
         link = requests.get("https://api.github.com/users/" + git.user_names[j] + "/repos",
@@ -97,11 +101,12 @@ def language():
             for l in range(0, len(language_data)):
                 add_language.append(list(language_data)[l])
             git_language[git.user_names[i]] = list(set(add_language))
-    return (jsonify(git_language))
+    git.add.append(jsonify(git_language))
+    return jsonify(git_language)
 
 
 # 4.weekly commits in 2018
-@app.route('/repo', method=['GET'])
+@app.route('/t4', method=['GET'])
 def weekly():
     for i in range(0, len(git.user_names)):
         repos = requests.get('https://api.github.com/users/' + git.user_names[i] + '/repos?per_page=1000',
@@ -129,13 +134,14 @@ def weekly():
             else:
                 continue
         cmt_rate[git.user_name[r]] = count
-    return (cmt_rate)
+    git.add.append(jsonify(cmt_rate))
+    return jsonify(cmt_rate)
 
 
 """  5. The average commit rate of each user to any project, for 2018."""
 
 
-@app.route('/rate', method=['GET'])
+@app.route('/t5', method=['GET'])
 def average():
     avg_cmt = {}
     for name in git.user_names:
@@ -160,6 +166,7 @@ def average():
                 else:
                     pass
         avg_cmt[name] = (count / (len(results)))
+    git.add.append(jsonify(avg_cmt))
     return jsonify(avg_cmt)
 
 
@@ -167,8 +174,42 @@ def average():
 contributed to any project that the user has contributed to)."""
 
 
+@app.route('/t6', methods=['GET'])
 def average():
-    pass
+    contributors = {}
+    for user in git.git_username:
+        counter = 0
+        link = requests.get("https://api.github.com/users/" + user + "/repos?per_page=100",
+                            auth=('yangxiyucs', 'ab112113'))
+        json_data = json.loads(link.text)
+        results = nested_lookup(key='name', document=json_data)
+
+        for r in results:
+            result = requests.get("https://api.github.com/repos/" + user + "/" + r + "/commits?since=2018-01-01",
+                                  auth=('yangxiyucs', 'ab112113'))
+            results = json.loads(result.text)
+            count = 0
+            if (len(results) != 0):
+                count += 1
+                contributor = requests.get("https://api.github.com/repos/" + user + "/" + r + "/contributors",
+                                           auth=('yangxiyucs', 'ab112113'))
+                data = json.loads(contributor.text)
+                counter = counter + len(data)
+            else:
+                continue
+        contributors[user] = (counter - count)
+    git.add.append(contributors)
+    return jsonify({contributors})
+
+
+''''EMAIL'''
+
+
+@app.route('/email', methods=['GET', 'POST'])
+def send_mail():
+    for user in git.user_names:
+        msg = Message('github', sender='176098868@qq.com', body=git.add, recipients=git.user_names[user])
+        mail.send(msg)
 
 
 if __name__ == "__main__":
