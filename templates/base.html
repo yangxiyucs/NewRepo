@@ -3,41 +3,41 @@
 <head>
     {% block head %}
     <meta charset="utf-8">
-    <title>{% block title %}GitHub Login - HelloFlask{% endblock %}</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    {% block styles %}
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css' ) }}">
-    {% endblock %}
+    <title>{% block title %}Github API Call{% endblock %}</title>
+    <!--<link rel="icon" type="" href="{{ url_for('static', filename='') }}">-->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css' )}}">
     {% endblock %}
 </head>
+
 <body>
-    <nav>
-        <ul>
-            <li><a href="{{ url_for('index') }}">Home</a></li>
-        </ul>
-    </nav>
+<!--<nav>-->
+    <!--<ul>-->
+        <!---->
+    <!--</ul>-->
+<!--</nav>-->
 
 
-    <main>
-        {% for message in get_flashed_messages() %}
-
-        <div class="alert">
-            {{ message }}
-        </div>
-
+<main>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul>
+        {% for message in messages %}
+        <li>{{ message }}</li>
         {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
 
-        {% block content %}
+    <!--{% block content %}-->
 
-        {% endblock %}
-    </main>
+    <!--{% endblock %}-->
+</main>
 
 <footer>
-    {% block footer %}
+    <!--{% block footer %}-->
 
-    {% endblock %}
+    <!--{% endblock %}-->
 </footer>
-{% block scripts %}
-    {% endblock %}
+
 </body>
 </html>
