@@ -1,5 +1,6 @@
 import requests
 from flask import json
+from flask_mail import Message
 from nested_lookup import nested_lookup
 
 # user_names = ['Danielo814','yangxiyucs']
@@ -48,20 +49,34 @@ from nested_lookup import nested_lookup
 # results = json.loads(result.text)
 # print(results)
 
-#-------------------t6
-link = requests.get("https://api.github.com/users/yangxiyucs/repos?per_page=1000",
-                    auth=('yangxiyucs', 'ab112113'))
-json_data = json.loads(link.text)
-results = nested_lookup(key='full_name', document=json_data)
-print(results)
-date = nested_lookup(key='updated_at', document=json_data)
-print(date)
+# -------------------t6
+# link = requests.get("https://api.github.com/users/yangxiyucs/repos?per_page=1000",
+#                     auth=('yangxiyucs', 'ab112113'))
+# json_data = json.loads(link.text)
+# results = nested_lookup(key='full_name', document=json_data)
+# print(results)
+# date = nested_lookup(key='updated_at', document=json_data)
+# print(date)
+#
+# counter = 0
+# for r in results:
+#     if (str(date).find('2018') != -1):
+#         contributor = requests.get("https://api.github.com/repos/yangxiyucs/NewRepo/contributors",
+#                                    auth=('yangxiyucs', 'ab112113'))
+#         data = json.loads(contributor.text)
+#         counter += len(data)
+# print(counter)
+from git_test import mail
 
-counter = 0
-for r in results:
-    if (str(date).find('2018') != -1):
-        contributor = requests.get("https://api.github.com/repos/yangxiyucs/NewRepo/contributors",
-                                   auth=('yangxiyucs', 'ab112113'))
-        data = json.loads(contributor.text)
-        counter += len(data)
-print(counter)
+
+def send_mail():
+    jsondata = requests.get('https://api.github.com/users/yangxiyucs/events/public',
+                            auth=('yangxiyucs', 'ab112113'))
+    data = json.loads(jsondata.text)
+    emails = nested_lookup(key='email', document=data, wild=True)
+    msg = Message('github', sender='yangxiyucs@gmail.com',
+                  recipients=['yangxiyucs@gmail.com'])
+    msg.body = 'hahah'
+    mail.send(msg)
+
+send_mail()

@@ -16,6 +16,16 @@ app = Flask(__name__)
 api = Api(app)
 mail = Mail()
 ''''main'''
+mail_settings = {
+    'MAIL_SERVER': 'smtp.gmail.com',
+    'MAIL_PORT': 465,
+    'MAIL_USE_SSL': True,
+    'MAIL_USE_TSL': False,
+    'MAIL_USERNAME': 'yangxiyucs@gmail.com',
+    'MAIL_PASSWORD': 'ab112113'
+
+}
+app.config.update(mail_settings)
 mail.init_app(app)
 app.config.from_object('app.setting')
 
@@ -33,8 +43,27 @@ class main():
             self.repos.append(self.repo_name)
             self.number_of_users -= 1
 
+    ''''
+    EMAIL
+    '''
 
-"""1.Total number of commit contributions to any project to which a user has a contributed."""
+    def send_mail(data):
+        for i in range(len(git.user_names)):
+            jsondata = requests.get('https://api.github.com/users/' + git.user_names[i] + '/events/public',
+                                    auth=('yangxiyucs', 'ab112113'))
+            data = json.loads(jsondata.text)
+            emails = nested_lookup(key='email', document=data, wild=True)
+            msg = Message('github', sender='yangxiyucs@gmail.com',
+                          recipients=[emails[i]])
+            msg.body = json.dumps(git.add)
+            mail.send(msg)
+
+
+# git.user_names[user] + '@github.com'
+"""、
+1.Total number of commit contributions to any project to which a user has a contributed.
+
+"""
 
 
 @app.route('/t1', methods=['GET', 'POST'])
@@ -58,13 +87,17 @@ def total():
 
     final = json.dumps({'Total Commit': git_commit_count})
     git.add.append(final)
+    git.send_mail()
     print(final)
     # print(jsonify({'count': git_commit_count}))
     # flash("success")
     return render_template('index.html', final=final)
 
 
-"""2.Total number of commit contributions as above, but restricted to projects that are members of the original submitted set."""
+"""
+2.Total number of commit contributions as above, but restricted to projects that are members of the original submitted set.
+
+"""
 
 
 @app.route('/t2', methods=['GET', 'POST'])
@@ -80,6 +113,7 @@ def origin():
 
     final = json.dumps({'Original Commit': commit_list})
     git.add.append(final)
+    git.send_mail()
     print(final)
     return render_template('index.html', final=final)
 
@@ -113,12 +147,18 @@ def language():
         print(counter)
     final = json.dumps({'Language Used': git_language})
     git.add.append(final)
+    git.send_mail()
     print(final)
 
     return render_template('index.html', final=final, counter=counter)
 
 
-# 4.weekly commits in 2018
+'''
+4.weekly commits in 2018
+
+'''
+
+
 @app.route('/t4', methods=['GET', 'POST'])
 def weekly():
     # for i in range(0, len(git.user_names)):
@@ -150,6 +190,7 @@ def weekly():
         cmt_rate[git.user_names[r]] = count
     final = json.dumps({'weekly commit': cmt_rate})
     git.add.append(final)
+    git.send_mail()
     print(final)
     return render_template('index.html', final=final)
 
@@ -184,6 +225,7 @@ def average():
                     continue
         avg_cmt[name] = (count / (len(results)))
     git.add.append(json.dumps({'average commit rate(2018)': avg_cmt}))
+    git.send_mail()
     final = json.dumps({'average commit rate(2018)': avg_cmt})
     print(final)
     return render_template('index.html', final=final)
@@ -231,22 +273,11 @@ def collaborators():
         contributors['{0}'.format(user)] = (counter - count)
     final = json.dumps({'contributors (2018)': contributors})
     git.add.append(final)
+    git.send_mail()
     print(final)
     return render_template('index.html', final=final)
 
 
-''''EMAIL'''
-
-
-@app.route('/email', methods=['GET', 'POST'])
-def send_mail():
-    for user in git.user_names:
-        msg = Message('github', sender='176098868@qq.com', subject='github API',
-                      recipients=git.user_names[user] + '@github.com')
-        msg.html = git.add
-        mail.send(msg)
-
-
 if __name__ == "__main__":
     git = main()
-    app.run(host='0.0.0.0', port=8080)
+    app.run(port=8080)
