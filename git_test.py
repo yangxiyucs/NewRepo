@@ -49,15 +49,15 @@ def total():
             git_user_data = {}
             result = subprocess.check_output(["curl", "-H", "Accept: application/vnd.github.cloak-preview",
                                               "https://api.github.com/search/commits?q=author:" + git.user_names[
-                                                  i] + "&per_page=1000"])
+                                                  i] + "&per_page=1000"], shell=False)
             git_user_data[git.user_names[i]] = json.loads(result)
-            results = nested_lookup(key='date', document=git_user_data, wild=True)
+            results = nested_lookup(key='date', document=git_user_data)
             results = list(set(results))
             results = [date for date in results if ("2018" in date)]
             git_commit_count[git.user_names[i]] = len(results)
 
-    git.add.append(json.dumps(git_commit_count))
     final = json.dumps({'Total Commit': git_commit_count})
+    git.add.append(final)
     print(final)
     # print(jsonify({'count': git_commit_count}))
     # flash("success")
@@ -78,8 +78,8 @@ def origin():
         json_data = json.loads(result.text)
         commit_list[user] = len(json_data)
 
-    git.add.append(json.dumps(commit_list))
     final = json.dumps({'Original Commit': commit_list})
+    git.add.append(final)
     print(final)
     return render_template('index.html', final=final)
 
@@ -96,7 +96,7 @@ def language():
         link = requests.get("https://api.github.com/users/" + git.user_names[j] + "/repos",
                             auth=('yangxiyucs', 'ab112113'))
         json_data = json.loads(link.text)
-        results = nested_lookup(key='full_name', document=json_data, wild=True)
+        results = nested_lookup(key='full_name', document=json_data)
 
         git_language = {}
         add_language = []
@@ -127,6 +127,7 @@ def weekly():
         weeks = results.json()['all']
         for i in weeks:
             pass
+        #
     for r in range(0, len(git.user_names)):
         link = requests.get(
             "https://api.github.com/repos/" + git.user_names[r] + "/" + git.repos[r] + "/stats/commit_activity",
@@ -142,7 +143,7 @@ def weekly():
             else:
                 continue
         cmt_rate[git.user_names[r]] = count
-    final = json.dumps({'Language Used': cmt_rate})
+    final = json.dumps({'weekly commit': cmt_rate})
     git.add.append(final)
     print(final)
     return render_template('index.html', final=final)
@@ -175,8 +176,8 @@ def average():
                 else:
                     continue
         avg_cmt[name] = (count / (len(results)))
-    git.add.append(json.dumps(avg_cmt))
-    final = json.dumps(avg_cmt)
+    git.add.append(json.dumps({'average commit rate(2018)': avg_cmt}))
+    final = json.dumps({'average commit rate(2018)': avg_cmt})
     print(final)
     return render_template('index.html', final=final)
 
@@ -188,29 +189,35 @@ contributed to any project that the user has contributed to)."""
 @app.route('/t6', methods=['GET', 'POST'])
 def collaborators():
     contributors = {}
-    for user in git.git_username:
+    for user in git.git_usernames:
         counter = 0
         link = requests.get("https://api.github.com/users/" + user + "/repos?per_page=1000",
                             auth=('yangxiyucs', 'ab112113'))
         json_data = json.loads(link.text)
-        results = nested_lookup(key='name', document=json_data)
-
+        results = nested_lookup(key='full_name', document=json_data)
+        date = nested_lookup(key='created_at', document=json_data)
         for r in results:
-            result = requests.get("https://api.github.com/repos/" + user + "/" + r + "/commits?since=2018-01-01",
-                                  auth=('yangxiyucs', 'ab112113'))
-            results = json.loads(result.text)
-            count = 0
-            if (len(results) != 0):
-                count += 1
-                contributor = requests.get("https://api.github.com/repos/" + user + "/" + r + "/contributors",
+            if ('2018' in date):
+                contributor = requests.get("https://api.github.com/repos/" + r + "/contributors",
                                            auth=('yangxiyucs', 'ab112113'))
-                data = json.loads(contributor.text)
-                counter = counter + len(data)
+                data = json.load(contributor.text)
+                counter += data
+                # for r in results:
+                #     result = requests.get("https://api.github.com/repos/" + r + "/commits?since=2018-01-01",
+                #                           auth=('yangxiyucs', 'ab112113'))
+                #     results = json.loads(result.text)
+                #     count = 0
+                #     if (len(results) != 0):
+                #         count += 1
+                #         contributor = requests.get("https://api.github.com/repos/" + r + "/contributors",
+                #                                    auth=('yangxiyucs', 'ab112113'))
+                #         data = json.loads(contributor.text)
+                #         counter = counter + len(data)
             else:
                 continue
-        contributors[user] = (counter - count)
-    git.add.append(json.dumps(contributors))
-    final = json.dumps(contributors)
+        contributors[user] = (counter)
+    final = json.dumps({'contributors (2018)': contributors})
+    git.add.append(final)
     print(final)
     return render_template('index.html', final=final)
 
@@ -222,7 +229,7 @@ def collaborators():
 def send_mail():
     for user in git.user_names:
         msg = Message('github', sender='176098868@qq.com', subject='github API',
-                      recipients=git.user_names[user])
+                      recipients=git.user_names[user] + '@github.com')
         msg.html = git.add
         mail.send(msg)
 
